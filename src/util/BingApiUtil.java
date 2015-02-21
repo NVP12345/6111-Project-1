@@ -1,7 +1,9 @@
 package util;
 
-import domain.QueryResult;
+import domain.QueryResultItem;
+import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.net.URLCodec;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,15 +16,18 @@ public class BingApiUtil {
 
     private static final String BING_URL = "https://api.datamarket.azure.com/Bing/Search/Web?$top=10&$format=json";
     private static final String BING_ACCOUNT_KEY = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
+    private static final URLCodec URL_CODEC = new URLCodec();
 
-    public static List<QueryResult> getBingQueryResults(String queryString) {
+    public static List<QueryResultItem> getBingQueryResults(List<String> queryTerms) {
         byte[] accountKeyBytes = Base64.encodeBase64((BING_ACCOUNT_KEY + ":" + BING_ACCOUNT_KEY).getBytes());
         String accountKeyEnc = new String(accountKeyBytes);
 
         URL url = null;
         try {
-            url = new URL(BING_URL + "&Query=%27" + queryString + "%27");
+            url = new URL(BING_URL + "&Query=%27" + URL_CODEC.encode(QueryTermUtil.buildQueryStringFromTerms(queryTerms)) + "%27");
         } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        } catch (EncoderException e) {
             throw new RuntimeException(e);
         }
         URLConnection urlConnection = null;
@@ -48,7 +53,7 @@ public class BingApiUtil {
         }
 
         String content = new String(rawContent);
-        return QueryResult.buildListFromApiResultJsonString(content);
+        return QueryResultItem.buildListFromApiResultJsonString(content);
     }
 
 }
