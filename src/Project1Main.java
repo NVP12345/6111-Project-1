@@ -57,6 +57,9 @@ public class Project1Main {
             orderQueryTerms(queryTerms, allQueryResultItemsById.values());
             newQueryTermMessage += "to the query. Current query is: " + QueryTermUtil.buildQueryStringFromTerms(queryTerms);
             System.out.println(newQueryTermMessage);
+
+            //remove when new terms are relevant
+            System.exit(1);
         }
 
     }
