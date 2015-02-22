@@ -3,6 +3,7 @@ import util.BingApiUtil;
 import util.DoubleValidatorUtil;
 import util.QueryTermUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,10 +27,6 @@ public class Project1Main {
             mergeQueryResultItems(allQueryResultItemsById, currentQueryResultItems);
             promptForRelevance(currentQueryResultItems);
             double currentPrecision = getCurrentPrecision(currentQueryResultItems);
-            if (currentPrecision == 0) {
-                System.out.println("Precision is at 0. Terminating.");
-                System.exit(1);
-            }
             if (currentPrecision >= targetPrecision) {
                 System.out.format("Precision reached %f, which exceeds target of %f. Current results:\n\n", currentPrecision, targetPrecision);
                 for (QueryResultItem queryResultItem : currentQueryResultItems) {
@@ -39,24 +36,27 @@ public class Project1Main {
                 System.out.println("Terminating.");
                 System.exit(0);
             }
-            else {
-                System.out.format("Precision is at %f, which does not meet target of %f. Determining terms to augment query...\n", currentPrecision, targetPrecision);
-                List<String> newQueryTerms = determineAugmentedQueryTerms(allQueryResultItemsById.values());
-                String newQueryTermMessage = "Adding ";
-                boolean first = true;
-                for (String newQueryTerm : newQueryTerms) {
-                    if (!first) {
-                        newQueryTermMessage += "and ";
-                    } else {
-                        first = false;
-                    }
-                    newQueryTermMessage += "\"" + newQueryTerm + "\" ";
-                    queryTerms.add(newQueryTerm);
-                }
-                orderQueryTerms(queryTerms, allQueryResultItemsById.values());
-                newQueryTermMessage += "to the query. Current query is: " + QueryTermUtil.buildQueryStringFromTerms(queryTerms);
-                System.out.println(newQueryTermMessage);
+            if (currentPrecision == 0) {
+                System.out.println("Precision is at 0. Terminating.");
+                System.exit(1);
             }
+
+            System.out.format("Precision is at %f, which does not meet target of %f. Determining terms to augment query...\n", currentPrecision, targetPrecision);
+            List<String> newQueryTerms = determineAugmentedQueryTerms(allQueryResultItemsById.values());
+            String newQueryTermMessage = "Adding ";
+            boolean first = true;
+            for (String newQueryTerm : newQueryTerms) {
+                if (!first) {
+                    newQueryTermMessage += "and ";
+                } else {
+                    first = false;
+                }
+                newQueryTermMessage += "\"" + newQueryTerm + "\" ";
+                queryTerms.add(newQueryTerm);
+            }
+            orderQueryTerms(queryTerms, allQueryResultItemsById.values());
+            newQueryTermMessage += "to the query. Current query is: " + QueryTermUtil.buildQueryStringFromTerms(queryTerms);
+            System.out.println(newQueryTermMessage);
         }
 
     }
@@ -64,7 +64,7 @@ public class Project1Main {
     private static List<String> promptForQueryString() {
         System.out.print("Enter your query string: ");
         String input = IN.nextLine();
-        return Arrays.asList(input.split("\\s"));
+        return new ArrayList<String>(Arrays.asList(input.split("\\s")));
     }
 
     private static double promptForPrecision() {
