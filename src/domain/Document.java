@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import util.DocumentParsingUtil;
+import util.DocumentRetrievalUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ public class Document {
     private final String description;
     private final String displayUrl;
     private final String url;
+    private final boolean valid;
     private Boolean relevant;
 
     private final Map<String, Integer> titleTermFrequencies;
@@ -31,10 +33,20 @@ public class Document {
         displayUrl = queryResultJson.getString("DisplayUrl");
         url = queryResultJson.getString("Url");
 
-        titleTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title);
-        contentTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(description);
-        allWords = new HashSet<String>(titleTermFrequencies.keySet());
-        allWords.addAll(contentTermFrequencies.keySet());
+        String content = DocumentRetrievalUtil.getDocumentContentsIfPossible(url);
+        valid = content != null;
+
+        if (valid) {
+            titleTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title);
+            contentTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(content);
+
+            allWords = new HashSet<String>(titleTermFrequencies.keySet());
+            allWords.addAll(contentTermFrequencies.keySet());
+        } else {
+            titleTermFrequencies = null;
+            contentTermFrequencies = null;
+            allWords = null;
+        }
     }
 
     public static List<Document> buildListFromApiResultJsonString(String resultJsonString) {
@@ -77,6 +89,10 @@ public class Document {
 
     public void setRelevant(boolean relevant) {
         this.relevant = relevant;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     public Map<String, Integer> getTitleTermFrequencies() {

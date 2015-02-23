@@ -30,14 +30,24 @@ public class AggregateDocumentData {
     }
 
     public void refreshAggregateData() {
+        clearAggregateData();
         for (Document document : allDocumentsById.values()) {
-            addQueryResultItemToAggregateData(document);
+            if (document.isValid()) {
+                incrementDocumentTermFrequencyForTerms(document);
+            }
         }
         calculateInverseDocumentFrequencies();
         calculateTermWeights();
     }
 
-    private void addQueryResultItemToAggregateData(Document document) {
+    private void clearAggregateData() {
+        documentTermFrequencies.clear();
+        inverseDocumentFrequencies.clear();
+        termWeightsByDocumentId.clear();
+        aggregateTermWeights.clear();
+    }
+
+    private void incrementDocumentTermFrequencyForTerms(Document document) {
         for (String word : document.getAllWords()) {
             if ( ! documentTermFrequencies.containsKey(word) ) {
                 documentTermFrequencies.put(word, 1);
@@ -57,29 +67,31 @@ public class AggregateDocumentData {
     private void calculateTermWeights() {
         for (String documentId : allDocumentsById.keySet()) {
             Document document = allDocumentsById.get(documentId);
-            Map<String, Double> documentTermWeights = new HashMap<String, Double>();
-            Map<String, Integer> titleTermFrequencies = document.getTitleTermFrequencies();
-            Map<String, Integer> contentTermFrequencies = document.getContentTermFrequencies();
-            for (String term : document.getAllWords()) {
-                double termWeight = 0;
-                if (titleTermFrequencies.containsKey(term)) {
-                    termWeight += titleTermFrequencies.get(term) * WeightConstants.TITLE_WEIGHT;
-                }
-                if (contentTermFrequencies.containsKey(term)) {
-                    termWeight += contentTermFrequencies.get(term) * WeightConstants.CONTENT_WEIGHT;
-                }
-                termWeight *= inverseDocumentFrequencies.get(term);
+            if (document.isValid()) {
+                Map<String, Double> documentTermWeights = new HashMap<String, Double>();
+                Map<String, Integer> titleTermFrequencies = document.getTitleTermFrequencies();
+                Map<String, Integer> contentTermFrequencies = document.getContentTermFrequencies();
+                for (String term : document.getAllWords()) {
+                    double termWeight = 0;
+                    if (titleTermFrequencies.containsKey(term)) {
+                        termWeight += titleTermFrequencies.get(term) * WeightConstants.TITLE_WEIGHT;
+                    }
+                    if (contentTermFrequencies.containsKey(term)) {
+                        termWeight += contentTermFrequencies.get(term) * WeightConstants.CONTENT_WEIGHT;
+                    }
+                    termWeight *= inverseDocumentFrequencies.get(term);
 
-                documentTermWeights.put(term, termWeight);
+                    documentTermWeights.put(term, termWeight);
 
-                double aggregateTermWeightValue = document.getRelevant() ? termWeight : -1 * termWeight;
-                if ( ! aggregateTermWeights.containsKey(term) ) {
-                    aggregateTermWeights.put(term, aggregateTermWeightValue);
-                } else {
-                    aggregateTermWeights.put(term, aggregateTermWeights.get(term) + aggregateTermWeightValue);
+                    double aggregateTermWeightValue = document.getRelevant() ? termWeight : -1 * termWeight;
+                    if ( ! aggregateTermWeights.containsKey(term) ) {
+                        aggregateTermWeights.put(term, aggregateTermWeightValue);
+                    } else {
+                        aggregateTermWeights.put(term, aggregateTermWeights.get(term) + aggregateTermWeightValue);
+                    }
                 }
+                termWeightsByDocumentId.put(documentId, documentTermWeights);
             }
-            termWeightsByDocumentId.put(documentId, documentTermWeights);
         }
     }
 

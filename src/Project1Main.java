@@ -28,7 +28,7 @@ public class Project1Main {
         AggregateDocumentData aggregateDocumentData = new AggregateDocumentData();
 
         while (true) {
-            System.out.println("Executing query...");
+            System.out.println("Executing query and parsing documents...");
             List<Document> currentDocuments = BingApiUtil.getBingQueryResults(orderedQueryTerms, aggregateDocumentData.getAllDocumentsById());
             promptForRelevance(currentDocuments);
             double currentPrecision = getCurrentPrecision(currentDocuments);
