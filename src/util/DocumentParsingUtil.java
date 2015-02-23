@@ -7,7 +7,7 @@ import java.util.StringTokenizer;
 public class DocumentParsingUtil {
 
     public static Map<String, Integer> getWordFrequenciesForContent(String input) {
-        StringTokenizer tokenizer = new StringTokenizer(input, " \t\n\r\f,.:;?![]'");
+        StringTokenizer tokenizer = new StringTokenizer(input, " \t\n\r\f,.:;?![]'()");
         Map<String, Integer> words = new HashMap<String, Integer>();
         while (tokenizer.hasMoreTokens()) {
             String word = tokenizer.nextToken().toLowerCase();

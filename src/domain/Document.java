@@ -6,8 +6,10 @@ import org.json.JSONObject;
 import util.DocumentParsingUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Document {
 
@@ -18,9 +20,9 @@ public class Document {
     private final String url;
     private Boolean relevant;
 
-//    private final Map<String, Integer> titleTermFrequencies;
-//    private final Map<String, Integer> contentTermFrequencies;
-    private final Map<String, Integer> termFrequencies;
+    private final Map<String, Integer> titleTermFrequencies;
+    private final Map<String, Integer> contentTermFrequencies;
+    private final Set<String> allWords;
 
     private Document(JSONObject queryResultJson) throws JSONException {
         id = queryResultJson.getString("ID");
@@ -29,9 +31,10 @@ public class Document {
         displayUrl = queryResultJson.getString("DisplayUrl");
         url = queryResultJson.getString("Url");
 
-//        titleTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title);
-//        contentTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(description);
-        termFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title + " " + description);
+        titleTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title);
+        contentTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(description);
+        allWords = new HashSet<String>(titleTermFrequencies.keySet());
+        allWords.addAll(contentTermFrequencies.keySet());
     }
 
     public static List<Document> buildListFromApiResultJsonString(String resultJsonString) {
@@ -76,8 +79,16 @@ public class Document {
         this.relevant = relevant;
     }
 
-    public Map<String, Integer> getTermFrequencies() {
-        return termFrequencies;
+    public Map<String, Integer> getTitleTermFrequencies() {
+        return titleTermFrequencies;
+    }
+
+    public Map<String, Integer> getContentTermFrequencies() {
+        return contentTermFrequencies;
+    }
+
+    public Set<String> getAllWords() {
+        return allWords;
     }
 
     @Override

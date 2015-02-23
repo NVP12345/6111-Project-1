@@ -1,5 +1,7 @@
 package domain;
 
+import conf.WeightConstants;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +38,7 @@ public class AggregateDocumentData {
     }
 
     private void addQueryResultItemToAggregateData(Document document) {
-        for (String word : document.getTermFrequencies().keySet()) {
+        for (String word : document.getAllWords()) {
             if ( ! documentTermFrequencies.containsKey(word) ) {
                 documentTermFrequencies.put(word, 1);
             } else {
@@ -56,9 +58,18 @@ public class AggregateDocumentData {
         for (String documentId : allDocumentsById.keySet()) {
             Document document = allDocumentsById.get(documentId);
             Map<String, Double> documentTermWeights = new HashMap<String, Double>();
-            Map<String, Integer> termFrequencies = document.getTermFrequencies();
-            for (String term : termFrequencies.keySet()) {
-                double termWeight = termFrequencies.get(term) * inverseDocumentFrequencies.get(term);
+            Map<String, Integer> titleTermFrequencies = document.getTitleTermFrequencies();
+            Map<String, Integer> contentTermFrequencies = document.getContentTermFrequencies();
+            for (String term : document.getAllWords()) {
+                double termWeight = 0;
+                if (titleTermFrequencies.containsKey(term)) {
+                    termWeight += titleTermFrequencies.get(term) * WeightConstants.TITLE_WEIGHT;
+                }
+                if (contentTermFrequencies.containsKey(term)) {
+                    termWeight += contentTermFrequencies.get(term) * WeightConstants.CONTENT_WEIGHT;
+                }
+                termWeight *= inverseDocumentFrequencies.get(term);
+
                 documentTermWeights.put(term, termWeight);
 
                 double aggregateTermWeightValue = document.getRelevant() ? termWeight : -1 * termWeight;
