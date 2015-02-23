@@ -1,6 +1,6 @@
 package util;
 
-import domain.QueryResultItem;
+import domain.Document;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.net.URLCodec;
@@ -10,7 +10,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class BingApiUtil {
 
@@ -18,7 +20,7 @@ public class BingApiUtil {
     private static final String BING_ACCOUNT_KEY = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
     private static final URLCodec URL_CODEC = new URLCodec();
 
-    public static List<QueryResultItem> getBingQueryResults(List<String> queryTerms) {
+    public static List<Document> getBingQueryResults(List<String> queryTerms, Map<String, Document> allDocumentsById) {
         byte[] accountKeyBytes = Base64.encodeBase64((BING_ACCOUNT_KEY + ":" + BING_ACCOUNT_KEY).getBytes());
         String accountKeyEnc = new String(accountKeyBytes);
 
@@ -53,7 +55,18 @@ public class BingApiUtil {
         }
 
         String content = new String(rawContent);
-        return QueryResultItem.buildListFromApiResultJsonString(content);
+        List<Document> newDocuments = Document.buildListFromApiResultJsonString(content);
+        List<Document> currentResultItems = new ArrayList<Document>();
+        for (Document newDocument : newDocuments) {
+            String queryResultItemId = newDocument.getId();
+            if (allDocumentsById.containsKey(queryResultItemId)) {
+                currentResultItems.add(allDocumentsById.get(queryResultItemId));
+            } else {
+                currentResultItems.add(newDocument);
+                allDocumentsById.put(queryResultItemId, newDocument);
+            }
+        }
+        return currentResultItems;
     }
 
 }

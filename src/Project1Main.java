@@ -1,4 +1,5 @@
-import domain.QueryResultItem;
+import domain.AggregateDocumentData;
+import domain.Document;
 import util.BingApiUtil;
 import util.DoubleValidatorUtil;
 import util.QueryTermUtil;
@@ -6,31 +7,35 @@ import util.QueryTermUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Project1Main {
 
     private static final Scanner IN = new Scanner(System.in);
 
     public static void main(String[] args) {
-        List<String> queryTerms = promptForQueryString();
+        List<String> orderedQueryTerms = promptForQueryString();
+        Set<String> queryTermSet = new HashSet<String>(orderedQueryTerms);
         double targetPrecision = promptForPrecision();
-        Map<String, QueryResultItem> allQueryResultItemsById = new HashMap<String, QueryResultItem>();
+        AggregateDocumentData aggregateDocumentData = new AggregateDocumentData();
 
         while (true) {
             System.out.println("Executing query...");
-            List<QueryResultItem> currentQueryResultItems = BingApiUtil.getBingQueryResults(queryTerms);
-            mergeQueryResultItems(allQueryResultItemsById, currentQueryResultItems);
-            promptForRelevance(currentQueryResultItems);
-            double currentPrecision = getCurrentPrecision(currentQueryResultItems);
+            List<Document> currentDocuments = BingApiUtil.getBingQueryResults(orderedQueryTerms, aggregateDocumentData.getAllDocumentsById());
+            promptForRelevance(currentDocuments);
+            double currentPrecision = getCurrentPrecision(currentDocuments);
             if (currentPrecision >= targetPrecision) {
-                System.out.format("Precision reached %f, which exceeds target of %f. Current results:\n\n", currentPrecision, targetPrecision);
-                for (QueryResultItem queryResultItem : currentQueryResultItems) {
-                    System.out.println(queryResultItem);
+                System.out.format("Precision reached %f, which meets or exceeds target of %f. Current results:\n\n", currentPrecision, targetPrecision);
+                for (Document document : currentDocuments) {
+                    System.out.println(document);
                     System.out.print("\n");
                 }
                 System.out.println("Terminating.");
@@ -42,7 +47,7 @@ public class Project1Main {
             }
 
             System.out.format("Precision is at %f, which does not meet target of %f. Determining terms to augment query...\n", currentPrecision, targetPrecision);
-            List<String> newQueryTerms = determineAugmentedQueryTerms(allQueryResultItemsById.values());
+            List<String> newQueryTerms = determineAugmentedQueryTerms(queryTermSet, aggregateDocumentData);
             String newQueryTermMessage = "Adding ";
             boolean first = true;
             for (String newQueryTerm : newQueryTerms) {
@@ -52,14 +57,11 @@ public class Project1Main {
                     first = false;
                 }
                 newQueryTermMessage += "\"" + newQueryTerm + "\" ";
-                queryTerms.add(newQueryTerm);
+                queryTermSet.add(newQueryTerm);
             }
-            orderQueryTerms(queryTerms, allQueryResultItemsById.values());
-            newQueryTermMessage += "to the query. Current query is: " + QueryTermUtil.buildQueryStringFromTerms(queryTerms);
+            orderedQueryTerms = orderQueryTerms(queryTermSet, aggregateDocumentData.getAggregateTermWeights());
+            newQueryTermMessage += "to the query. Current query is: " + QueryTermUtil.buildQueryStringFromTerms(orderedQueryTerms);
             System.out.println(newQueryTermMessage);
-
-            //remove when new terms are relevant
-            System.exit(1);
         }
 
     }
@@ -67,7 +69,7 @@ public class Project1Main {
     private static List<String> promptForQueryString() {
         System.out.print("Enter your query string: ");
         String input = IN.nextLine();
-        return new ArrayList<String>(Arrays.asList(input.split("\\s")));
+        return new ArrayList<String>(Arrays.asList(input.toLowerCase().split("\\s")));
     }
 
     private static double promptForPrecision() {
@@ -83,27 +85,16 @@ public class Project1Main {
         }
     }
 
-    private static void mergeQueryResultItems(Map<String, QueryResultItem> allQueryResultItems, List<QueryResultItem> currentQueryResultItems) {
-        for (QueryResultItem queryResultItem : currentQueryResultItems) {
-            String id = queryResultItem.getId();
-            if (allQueryResultItems.containsKey(id)) {
-                queryResultItem.setRelevant(allQueryResultItems.get(id).getRelevant());
-            } else {
-                allQueryResultItems.put(id, queryResultItem);
+    private static void promptForRelevance(Collection<Document> documents) {
+        for (Document document : documents) {
+            if (document.getRelevant() == null) {
+                document.setRelevant(promptForRelevance(document));
             }
         }
     }
 
-    private static void promptForRelevance(Collection<QueryResultItem> queryResultItems) {
-        for (QueryResultItem queryResultItem : queryResultItems) {
-            if (queryResultItem.getRelevant() == null) {
-                queryResultItem.setRelevant(promptForRelevance(queryResultItem));
-            }
-        }
-    }
-
-    private static boolean promptForRelevance(QueryResultItem queryResultItem) {
-        System.out.println(queryResultItem);
+    private static boolean promptForRelevance(Document document) {
+        System.out.println(document);
         while (true) {
             System.out.print("Is this result relevant? (y or n): ");
             String input = IN.nextLine().trim().toLowerCase();
@@ -116,24 +107,55 @@ public class Project1Main {
         }
     }
 
-    private static double getCurrentPrecision(Collection<QueryResultItem> queryResultItems) {
+    private static double getCurrentPrecision(Collection<Document> documents) {
         int relevantResults = 0;
-        for (QueryResultItem queryResultItem : queryResultItems) {
-            if (queryResultItem.getRelevant()) {
+        for (Document document : documents) {
+            if (document.getRelevant()) {
                 ++relevantResults;
             }
         }
-        return relevantResults / (double) queryResultItems.size();
+        return relevantResults / (double) documents.size();
     }
 
-    private static List<String> determineAugmentedQueryTerms(Collection<QueryResultItem> currentQueryResultItems) {
-        List<String> newQueryTerms = new LinkedList<String>();
-        newQueryTerms.add("newTerm1");
-        newQueryTerms.add("newTerm2");
-        return newQueryTerms;
+    private static List<String> determineAugmentedQueryTerms(Set<String> currentQueryTerms, AggregateDocumentData aggregateDocumentData) {
+        aggregateDocumentData.refreshAggregateData();
+        Map<String, Double> aggregateTermWeights = aggregateDocumentData.getAggregateTermWeights();
+        List<String> allOrderedQueryTerms = orderQueryTerms(aggregateTermWeights.keySet(), aggregateTermWeights);
+
+        Iterator<String> queryTermIterator = allOrderedQueryTerms.iterator();
+        List<String> newTerms = new LinkedList<String>();
+        boolean nonNegativeTermWeight = true;
+        while (queryTermIterator.hasNext() && nonNegativeTermWeight && newTerms.size() < 2) {
+            String newTerm = queryTermIterator.next();
+            if ( ! currentQueryTerms.contains(newTerm) ) {
+                double aggregateTermWeight = aggregateTermWeights.get(newTerm);
+                if (aggregateTermWeight >= 0) {
+                    newTerms.add(newTerm);
+                } else {
+                    nonNegativeTermWeight = false;
+                }
+            }
+        }
+
+        if (newTerms.size() == 0) {
+            System.out.println("Could not determine additional terms to improve relevance. Terminating.");
+            System.exit(1);
+        }
+
+        return newTerms;
     }
 
-    private static void orderQueryTerms(List<String> queryTerms, Collection<QueryResultItem> values) {
-
+    private static List<String> orderQueryTerms(Set<String> queryTerms, final Map<String, Double> aggregateTermWeights) {
+        List<String> orderedQueryTerms = new ArrayList<String>(queryTerms);
+        Collections.sort(
+                orderedQueryTerms,
+                new Comparator<String>() {
+                    @Override
+                    public int compare(String o1, String o2) {
+                        return aggregateTermWeights.get(o2).compareTo(aggregateTermWeights.get(o1));
+                    }
+                }
+        );
+        return orderedQueryTerms;
     }
 }

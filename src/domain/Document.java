@@ -3,11 +3,13 @@ package domain;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import util.DocumentParsingUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public class QueryResultItem {
+public class Document {
 
     private final String id;
     private final String title;
@@ -16,26 +18,34 @@ public class QueryResultItem {
     private final String url;
     private Boolean relevant;
 
-    private QueryResultItem(JSONObject queryResultJson) throws JSONException {
-        this.id = queryResultJson.getString("ID");
-        this.title = queryResultJson.getString("Title");
-        this.description = queryResultJson.getString("Description");
-        this.displayUrl = queryResultJson.getString("DisplayUrl");
-        this.url = queryResultJson.getString("Url");
+//    private final Map<String, Integer> titleTermFrequencies;
+//    private final Map<String, Integer> contentTermFrequencies;
+    private final Map<String, Integer> termFrequencies;
+
+    private Document(JSONObject queryResultJson) throws JSONException {
+        id = queryResultJson.getString("ID");
+        title = queryResultJson.getString("Title");
+        description = queryResultJson.getString("Description");
+        displayUrl = queryResultJson.getString("DisplayUrl");
+        url = queryResultJson.getString("Url");
+
+//        titleTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title);
+//        contentTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(description);
+        termFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title + " " + description);
     }
 
-    public static List<QueryResultItem> buildListFromApiResultJsonString(String resultJsonString) {
-        List<QueryResultItem> queryResultItems = new ArrayList<QueryResultItem>();
+    public static List<Document> buildListFromApiResultJsonString(String resultJsonString) {
+        List<Document> documents = new ArrayList<Document>();
         try {
             JSONObject resultJsonWrapper = new JSONObject(resultJsonString);
             JSONArray resultJsonArray = resultJsonWrapper.getJSONObject("d").getJSONArray("results");
             for (int i = 0; i < resultJsonArray.length(); i++) {
-                queryResultItems.add(new QueryResultItem(resultJsonArray.getJSONObject(i)));
+                documents.add(new Document(resultJsonArray.getJSONObject(i)));
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
-        return queryResultItems;
+        return documents;
     }
 
     public String getId() {
@@ -62,8 +72,12 @@ public class QueryResultItem {
         return relevant;
     }
 
-    public void setRelevant(Boolean relevant) {
+    public void setRelevant(boolean relevant) {
         this.relevant = relevant;
+    }
+
+    public Map<String, Integer> getTermFrequencies() {
+        return termFrequencies;
     }
 
     @Override
