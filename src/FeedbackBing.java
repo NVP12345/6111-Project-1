@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
-public class Project1Main {
+public class FeedbackBing {
 
     private static final Scanner IN = new Scanner(System.in);
 
@@ -35,7 +35,7 @@ public class Project1Main {
             }
         }
         if (targetPrecision == -1) {
-            System.out.println("Precision must be a decimal between 0 and 1, inclusive");
+            System.out.println("Precision must be a decimal between 0 and 1, inclusive" + args[0]);
             System.exit(1);
         }
 
