@@ -71,12 +71,8 @@ public class FeedbackBing {
                 System.out.format("Desired precision reached, done");
                 System.exit(0);
             }
-            if (currentPrecision == 0) {
-                System.out.println("Precision is at 0. Terminating.");
-                System.exit(0);
-            }
 
-            System.out.format("Still below the desired precision of %f.\nIndexing results...\n", targetPrecision);
+            System.out.format("Still below the desired precision of %f.\nIndexing results...\nIndexing results...\n", targetPrecision);
             List<String> newQueryTerms = determineAugmentedQueryTerms(queryTermSet, aggregateDocumentData);
             String newQueryTermMessage = "Augmenting by  ";
             for (String newQueryTerm : newQueryTerms) {
@@ -145,11 +141,6 @@ public class FeedbackBing {
                     nonNegativeTermWeight = false;
                 }
             }
-        }
-
-        if (newTerms.size() == 0) {
-            System.out.println("Could not determine additional terms to improve relevance. Terminating.");
-            System.exit(1);
         }
 
         return newTerms;
