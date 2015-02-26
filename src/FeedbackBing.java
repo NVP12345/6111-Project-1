@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
-public class Project1Main {
+public class FeedbackBing {
 
     private static final Scanner IN = new Scanner(System.in);
 
@@ -55,9 +55,9 @@ public class Project1Main {
 
             System.out.format(
                     "======================\n" +
-                    "FEEDBACK SUMMARY\n" +
-                    "Query %s\n" +
-                    "Precision %f\n",
+                            "FEEDBACK SUMMARY\n" +
+                            "Query %s\n" +
+                            "Precision %f\n",
                     QueryTermUtil.buildQueryStringFromTerms(orderedQueryTerms), currentPrecision
             );
 
