@@ -22,23 +22,47 @@ public class Project1Main {
     private static final Scanner IN = new Scanner(System.in);
 
     public static void main(String[] args) {
-        List<String> orderedQueryTerms = promptForQueryString();
+        if (args.length != 2) {
+            System.out.println("Usage: java FeedbackBing <precision> <'query'>");
+            System.exit(1);
+        }
+
+        double targetPrecision = -1;
+        if (DoubleValidatorUtil.isStringParsableToDouble(args[0])) {
+            double value = Double.parseDouble(args[0]);
+            if (value >= 0 && value <= 1) {
+                targetPrecision = value;
+            }
+        }
+        if (targetPrecision == -1) {
+            System.out.println("Precision must be a decimal between 0 and 1, inclusive");
+            System.exit(1);
+        }
+
+        List<String> orderedQueryTerms = new ArrayList<String>(Arrays.asList(args[1].toLowerCase().split("\\s")));
         Set<String> queryTermSet = new HashSet<String>(orderedQueryTerms);
-        double targetPrecision = promptForPrecision();
         AggregateDocumentData aggregateDocumentData = new AggregateDocumentData();
 
         while (true) {
-            System.out.println("Executing query and parsing documents...");
+            System.out.println("Parameters:");
+            System.out.format("Client key\t= %s\n", BingApiUtil.BING_ACCOUNT_KEY);
+            System.out.format("Query\t\t= %s\n", QueryTermUtil.buildQueryStringFromTerms(orderedQueryTerms));
+            System.out.format("Precision\t= %f\n", targetPrecision);
             List<Document> currentDocuments = BingApiUtil.getBingQueryResults(orderedQueryTerms, aggregateDocumentData.getAllDocumentsById());
+            System.out.println("Bing Search Results:\n======================");
             promptForRelevance(currentDocuments);
             double currentPrecision = getCurrentPrecision(currentDocuments);
+
+            System.out.format(
+                    "======================\n" +
+                    "FEEDBACK SUMMARY\n" +
+                    "Query %s\n" +
+                    "Precision %f\n",
+                    QueryTermUtil.buildQueryStringFromTerms(orderedQueryTerms), currentPrecision
+            );
+
             if (currentPrecision >= targetPrecision) {
-                System.out.format("Precision reached %f, which meets or exceeds target of %f. Current results:\n\n", currentPrecision, targetPrecision);
-                for (Document document : currentDocuments) {
-                    System.out.println(document);
-                    System.out.print("\n");
-                }
-                System.out.println("Terminating.");
+                System.out.format("Desired precision reached, done");
                 System.exit(0);
             }
             if (currentPrecision == 0) {
@@ -46,57 +70,37 @@ public class Project1Main {
                 System.exit(1);
             }
 
-            System.out.format("Precision is at %f, which does not meet target of %f. Determining terms to augment query...\n", currentPrecision, targetPrecision);
+            System.out.format("Still below the desired precision of %f.\nIndexing results...\n", targetPrecision);
             List<String> newQueryTerms = determineAugmentedQueryTerms(queryTermSet, aggregateDocumentData);
-            String newQueryTermMessage = "Adding ";
-            boolean first = true;
+            String newQueryTermMessage = "Augmenting by  ";
             for (String newQueryTerm : newQueryTerms) {
-                if (!first) {
-                    newQueryTermMessage += "and ";
-                } else {
-                    first = false;
-                }
-                newQueryTermMessage += "\"" + newQueryTerm + "\" ";
+                newQueryTermMessage += newQueryTerm + " ";
                 queryTermSet.add(newQueryTerm);
             }
-            orderedQueryTerms = orderQueryTerms(queryTermSet, aggregateDocumentData.getAggregateTermWeights());
-            newQueryTermMessage += "to the query. Current query is: " + QueryTermUtil.buildQueryStringFromTerms(orderedQueryTerms);
+
+            if (newQueryTerms.isEmpty()) {
+                System.out.println("Below desired precision, but can no longer augment the query");
+                System.exit(1);
+            }
+
+            orderedQueryTerms.addAll(newQueryTerms);
             System.out.println(newQueryTermMessage);
         }
 
     }
 
-    private static List<String> promptForQueryString() {
-        System.out.print("Enter your query string: ");
-        String input = IN.nextLine();
-        return new ArrayList<String>(Arrays.asList(input.toLowerCase().split("\\s")));
-    }
-
-    private static double promptForPrecision() {
-        while (true) {
-            System.out.print("Enter the target precision (must be decimal between 0 and 1): ");
-            String input = IN.nextLine();
-            if (DoubleValidatorUtil.isStringParsableToDouble(input)) {
-                double value = Double.parseDouble(input);
-                if (value >= 0 && value <= 1) {
-                    return Double.parseDouble(input);
-                }
-            }
-        }
-    }
-
     private static void promptForRelevance(Collection<Document> documents) {
+        int documentNumberCounter = 1;
         for (Document document : documents) {
-            if (document.getRelevant() == null) {
-                document.setRelevant(promptForRelevance(document));
-            }
+            System.out.println("Result " + documentNumberCounter++);
+            document.setRelevant(promptForRelevance(document));
         }
     }
 
     private static boolean promptForRelevance(Document document) {
         System.out.println(document);
         while (true) {
-            System.out.print("Is this result relevant? (y or n): ");
+            System.out.print("Relevant (Y/N)? ");
             String input = IN.nextLine().trim().toLowerCase();
             if ("y".equals(input)) {
                 return true;

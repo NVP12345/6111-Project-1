@@ -1,9 +1,11 @@
 package domain;
 
 import conf.WeightConstants;
+import util.DocumentParsingUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class AggregateDocumentData {
 

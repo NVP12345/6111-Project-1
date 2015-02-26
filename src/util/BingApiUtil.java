@@ -17,7 +17,7 @@ import java.util.Map;
 public class BingApiUtil {
 
     private static final String BING_URL = "https://api.datamarket.azure.com/Bing/Search/Web?$top=10&$format=json";
-    private static final String BING_ACCOUNT_KEY = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
+    public static final String BING_ACCOUNT_KEY = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
     private static final URLCodec URL_CODEC = new URLCodec();
 
     public static List<Document> getBingQueryResults(List<String> queryTerms, Map<String, Document> allDocumentsById) {
@@ -32,6 +32,9 @@ public class BingApiUtil {
         } catch (EncoderException e) {
             throw new RuntimeException(e);
         }
+
+        System.out.println("URL: " + url);
+
         URLConnection urlConnection = null;
         try {
             urlConnection = url.openConnection();
@@ -56,6 +59,9 @@ public class BingApiUtil {
 
         String content = new String(rawContent);
         List<Document> newDocuments = Document.buildListFromApiResultJsonString(content);
+
+        System.out.println("Total no of results: " + newDocuments.size());
+
         List<Document> currentResultItems = new ArrayList<Document>();
         for (Document newDocument : newDocuments) {
             String queryResultItemId = newDocument.getId();

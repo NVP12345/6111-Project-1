@@ -19,6 +19,7 @@ public class Document {
     private final String description;
     private final String displayUrl;
     private final String url;
+    private final String content;
     private final boolean valid;
     private Boolean relevant;
 
@@ -33,7 +34,9 @@ public class Document {
         displayUrl = queryResultJson.getString("DisplayUrl");
         url = queryResultJson.getString("Url");
 
-        String content = DocumentRetrievalUtil.getDocumentContentsIfPossible(url);
+        //content = DocumentRetrievalUtil.getDocumentContentsIfPossible(url);
+        content = description;
+
         valid = content != null;
 
         if (valid) {
@@ -83,6 +86,10 @@ public class Document {
         return url;
     }
 
+    public String getContent() {
+        return content;
+    }
+
     public Boolean getRelevant() {
         return relevant;
     }
@@ -110,12 +117,12 @@ public class Document {
     @Override
     public String toString() {
         String output = String.format(
-                "ID: %s\n" +
-                "Title: %s\n " +
-                "Description: %s\n " +
-                "DisplayUrl: %s\n " +
-                "Url: %s ",
-                id, title, description, displayUrl, url
+                "[\n" +
+                " URL: %s\n" +
+                " Title: %s\n" +
+                " Summary: %s\n" +
+                "]\n",
+                url, title, description
         );
 
         if (relevant != null) {

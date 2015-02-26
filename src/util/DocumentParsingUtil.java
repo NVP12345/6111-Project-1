@@ -19,5 +19,4 @@ public class DocumentParsingUtil {
         }
         return words;
     }
-
 }
