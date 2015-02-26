@@ -35,7 +35,7 @@ public class FeedbackBing {
             }
         }
         if (targetPrecision == -1) {
-            System.out.println("Precision must be a decimal between 0 and 1, inclusive");
+            System.out.println("Precision must be a decimal between 0 and 1, inclusive" + args[0]);
             System.exit(1);
         }
 
