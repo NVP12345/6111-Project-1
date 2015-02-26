@@ -1,5 +1,6 @@
 package util;
 
+import conf.WeightConstants;
 import domain.Document;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.binary.Base64;
@@ -16,7 +17,8 @@ import java.util.Map;
 
 public class BingApiUtil {
 
-    private static final String BING_URL = "https://api.datamarket.azure.com/Bing/Search/Web?$top=10&$format=json";
+    public static final int NUMBER_OF_RESULTS = 10;
+    private static final String BING_URL = String.format("https://api.datamarket.azure.com/Bing/Search/Web?$top=%d&$format=json", NUMBER_OF_RESULTS);
     public static final String BING_ACCOUNT_KEY = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
     private static final URLCodec URL_CODEC = new URLCodec();
 

@@ -49,6 +49,12 @@ public class FeedbackBing {
             System.out.format("Query\t\t= %s\n", QueryTermUtil.buildQueryStringFromTerms(orderedQueryTerms));
             System.out.format("Precision\t= %f\n", targetPrecision);
             List<Document> currentDocuments = BingApiUtil.getBingQueryResults(orderedQueryTerms, aggregateDocumentData.getAllDocumentsById());
+
+            if (currentDocuments.size() != BingApiUtil.NUMBER_OF_RESULTS) {
+                System.out.format("Only %d reusults returned by Bing, where %d were expected. Terminating.", currentDocuments.size(), BingApiUtil.NUMBER_OF_RESULTS);
+                System.exit(1);
+            }
+
             System.out.println("Bing Search Results:\n======================");
             promptForRelevance(currentDocuments);
             double currentPrecision = getCurrentPrecision(currentDocuments);
@@ -67,7 +73,7 @@ public class FeedbackBing {
             }
             if (currentPrecision == 0) {
                 System.out.println("Precision is at 0. Terminating.");
-                System.exit(1);
+                System.exit(0);
             }
 
             System.out.format("Still below the desired precision of %f.\nIndexing results...\n", targetPrecision);
