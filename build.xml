@@ -16,6 +16,7 @@
 
     <target name="clean">
         <delete dir="${build.dir}"/>
+	<delete file="${jar.dir}/${ant.project.name}.jar"/>
     </target>
 
     <target name="compile">
