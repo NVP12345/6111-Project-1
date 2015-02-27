@@ -4,7 +4,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import util.DocumentParsingUtil;
-import util.DocumentRetrievalUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,11 +33,26 @@ public class Document {
         displayUrl = queryResultJson.getString("DisplayUrl");
         url = queryResultJson.getString("Url");
 
+        /*
+         We experimented with using both the full document and the description returned
+         by Bing. In general, using the description yielded better results.
+         */
+
         //content = DocumentRetrievalUtil.getDocumentContentsIfPossible(url);
         content = description;
 
+         /*
+         This is really only true when using the content returned by the DocumentRetrievalUtil
+         method, since as far as we can tell the API never returns null. Still, it's good to
+         keep this check so we can easily switch the strategy to use that method above if we
+         wish.
+         */
         valid = content != null;
 
+        /*
+         If possible, compute term frequencies and save them on the object for quick retrieval
+         later when computing term scores
+         */
         if (valid) {
             titleTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(title);
             contentTermFrequencies = DocumentParsingUtil.getWordFrequenciesForContent(content);

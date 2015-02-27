@@ -19,7 +19,7 @@ public class BingApiUtil {
 
     public static final int NUMBER_OF_RESULTS = 10;
     private static final String BING_URL = String.format("https://api.datamarket.azure.com/Bing/Search/Web?$top=%d&$format=json", NUMBER_OF_RESULTS);
-    public static final String BING_ACCOUNT_KEY = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
+    public static String BING_ACCOUNT_KEY; // = "gBjyBpDpbFVENUIq/YsYR813f7PuEIkpcqAsqVq45eY";
     private static final URLCodec URL_CODEC = new URLCodec();
 
     public static List<Document> getBingQueryResults(List<String> queryTerms, Map<String, Document> allDocumentsById) {

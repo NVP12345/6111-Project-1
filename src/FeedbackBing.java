@@ -22,24 +22,26 @@ public class FeedbackBing {
     private static final Scanner IN = new Scanner(System.in);
 
     public static void main(String[] args) {
-        if (args.length != 2) {
-            System.out.println("Usage: java FeedbackBing <precision> <'query'>");
+        if (args.length != 3) {
+            System.out.println("Usage: java FeedbackBing <client-key> <precision> <'query'>");
             System.exit(1);
         }
 
+        BingApiUtil.BING_ACCOUNT_KEY = args[0];
+
         double targetPrecision = -1;
-        if (DoubleValidatorUtil.isStringParsableToDouble(args[0])) {
-            double value = Double.parseDouble(args[0]);
+        if (DoubleValidatorUtil.isStringParsableToDouble(args[1])) {
+            double value = Double.parseDouble(args[1]);
             if (value >= 0 && value <= 1) {
                 targetPrecision = value;
             }
         }
         if (targetPrecision == -1) {
-            System.out.println("Precision must be a decimal between 0 and 1, inclusive" + args[0]);
+            System.out.println("Precision must be a decimal between 0 and 1, inclusive" + args[1]);
             System.exit(1);
         }
 
-        List<String> orderedQueryTerms = new ArrayList<String>(Arrays.asList(args[1].toLowerCase().split("\\s")));
+        List<String> orderedQueryTerms = new ArrayList<String>(Arrays.asList(args[2].toLowerCase().split("\\s")));
         Set<String> queryTermSet = new HashSet<String>(orderedQueryTerms);
         AggregateDocumentData aggregateDocumentData = new AggregateDocumentData();
 

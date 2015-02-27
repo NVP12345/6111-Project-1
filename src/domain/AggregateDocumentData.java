@@ -7,17 +7,15 @@ import java.util.Map;
 
 public class AggregateDocumentData {
 
-    private final Map<String, Document> allDocumentsById;
-    private final Map<String, Integer> documentTermFrequencies;
-    private final Map<String, Double> inverseDocumentFrequencies;
-    private final Map<String, Map<String, Double>> termWeightsByDocumentId;
-    private final Map<String, Double> aggregateTermWeights;
+    private final Map<String, Document> allDocumentsById; // Document ID -> Document
+    private final Map<String, Integer> documentTermFrequencies; // Term -> # of documents with term
+    private final Map<String, Double> inverseDocumentFrequencies;  // Term -> IDF for term
+    private final Map<String, Double> aggregateTermWeights; // Term -> Score
 
     public AggregateDocumentData() {
         allDocumentsById = new HashMap<String, Document>();
         documentTermFrequencies = new HashMap<String, Integer>();
         inverseDocumentFrequencies = new HashMap<String, Double>();
-        termWeightsByDocumentId = new HashMap<String, Map<String, Double>>();
         aggregateTermWeights = new HashMap<String, Double>();
     }
 
@@ -31,19 +29,32 @@ public class AggregateDocumentData {
 
     public void refreshAggregateData() {
         clearAggregateData();
+
+        /*
+        For 'valid' documents only, compute the document frequency for each term
+        */
+        int numberOfValidDocuments = 0;
         for (Document document : allDocumentsById.values()) {
             if (document.isValid()) {
                 incrementDocumentTermFrequencyForTerms(document);
+                ++numberOfValidDocuments;
             }
         }
-        calculateInverseDocumentFrequencies();
+
+        /*
+        Compute IDF for each term
+        */
+        calculateInverseDocumentFrequencies(numberOfValidDocuments);
+
+        /*
+        Compute aggregate TF*IDF for each term
+        */
         calculateTermWeights();
     }
 
     private void clearAggregateData() {
         documentTermFrequencies.clear();
         inverseDocumentFrequencies.clear();
-        termWeightsByDocumentId.clear();
         aggregateTermWeights.clear();
     }
 
@@ -57,10 +68,9 @@ public class AggregateDocumentData {
         }
     }
 
-    private void calculateInverseDocumentFrequencies() {
-        int N = allDocumentsById.size();
+    private void calculateInverseDocumentFrequencies(int numberOfValidDocuments) {
         for (String term : documentTermFrequencies.keySet()) {
-            inverseDocumentFrequencies.put(term, Math.log10(N / (double) documentTermFrequencies.get(term)));
+            inverseDocumentFrequencies.put(term, Math.log10(numberOfValidDocuments / (double) documentTermFrequencies.get(term)));
         }
     }
 
@@ -68,21 +78,29 @@ public class AggregateDocumentData {
         for (String documentId : allDocumentsById.keySet()) {
             Document document = allDocumentsById.get(documentId);
             if (document.isValid()) {
-                Map<String, Double> documentTermWeights = new HashMap<String, Double>();
                 Map<String, Integer> titleTermFrequencies = document.getTitleTermFrequencies();
                 Map<String, Integer> contentTermFrequencies = document.getContentTermFrequencies();
                 for (String term : document.getAllWords()) {
                     double termWeight = 0;
+
+                    /*
+                    Compute weighted term frequency
+                    */
                     if (titleTermFrequencies.containsKey(term)) {
                         termWeight += titleTermFrequencies.get(term) * WeightConstants.TITLE_WEIGHT;
                     }
                     if (contentTermFrequencies.containsKey(term)) {
                         termWeight += contentTermFrequencies.get(term) * WeightConstants.CONTENT_WEIGHT;
                     }
+
+                    /*
+                    Compute TF*IDF
+                    */
                     termWeight *= inverseDocumentFrequencies.get(term);
 
-                    documentTermWeights.put(term, termWeight);
-
+                    /*
+                    Aggregate TF*IDF for each term
+                    */
                     double aggregateTermWeightValue = document.getRelevant() ? termWeight : -1 * termWeight;
                     if ( ! aggregateTermWeights.containsKey(term) ) {
                         aggregateTermWeights.put(term, aggregateTermWeightValue);
@@ -90,7 +108,6 @@ public class AggregateDocumentData {
                         aggregateTermWeights.put(term, aggregateTermWeights.get(term) + aggregateTermWeightValue);
                     }
                 }
-                termWeightsByDocumentId.put(documentId, documentTermWeights);
             }
         }
     }
